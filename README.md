@@ -25,29 +25,22 @@ In active implementation from SuperNova issue: https://github.com/strognoff/stro
 ## Build Baseline (current)
 Android scaffold is in `android-app/`.
 
-Local bootstrap:
-```bash
-make bootstrap
-```
-
-Build (after wrapper exists):
-```bash
-make build
-```
-
-Current environment blocker:
-- `gradle` is not installed on this machine, so wrapper generation/build cannot run yet.
-
-Once Gradle is installed:
+Bootstrap + build:
 ```bash
 cd android-app
-gradle wrapper --gradle-version 8.7
+./bootstrap.sh
 ./gradlew assembleDebug
 ```
+
+Current status:
+- ✅ Gradle wrapper generated and committed
+- ✅ `./gradlew assembleDebug` successful on host
+- Debug APK generated at:
+  - `android-app/app/build/outputs/apk/debug/app-debug.apk`
 
 Detailed setup: `docs/SETUP.md`
 
 ## Next Steps
-1. Generate Gradle wrapper + first successful `assembleDebug`
-2. Implement timer engine/state machine
-3. Build preset grid and running screen
+1. Implement timer engine/state machine
+2. Build preset grid and running screen
+3. Add DPAD focus behaviors + lock mode
