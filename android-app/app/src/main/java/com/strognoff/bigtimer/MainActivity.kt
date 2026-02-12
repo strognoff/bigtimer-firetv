@@ -13,6 +13,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -28,6 +30,13 @@ class MainActivity : ComponentActivity() {
 fun BigTimerApp() {
   val vm = TimerViewModel()
   val ui = vm.state
+
+  LaunchedEffect(ui.phase, ui.totalSeconds) {
+    while (ui.phase == TimerPhase.Running) {
+      vm.tick()
+      delay(250)
+    }
+  }
 
   Column(
     modifier = Modifier
