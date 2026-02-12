@@ -1,14 +1,4 @@
-.DS_Store
-
-# Gradle
-.gradle/
-**/.gradle/
-build/
-**/build/
-
-# Android local SDK path
-local.properties
-
-# IDE
-.idea/
+android-app/.gradle/
+android-app/local.properties
+android-app/app/build/
 *.iml
