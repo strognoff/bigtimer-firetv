@@ -7,6 +7,14 @@ android {
   namespace = "com.strognoff.bigtimer"
   compileSdk = 34
 
+  buildFeatures {
+    compose = true
+  }
+
+  composeOptions {
+    kotlinCompilerExtensionVersion = "1.5.14"
+  }
+
   defaultConfig {
     applicationId = "com.strognoff.bigtimer"
     minSdk = 26
