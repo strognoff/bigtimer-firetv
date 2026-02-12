@@ -20,20 +20,46 @@ A TV-first countdown timer for kids routines with very fast start, large visuals
 4. Focus lock prevents accidental stop/reset
 5. Presets/settings persist across restart
 
-## Execution Plan (ordered)
-1) App skeleton (Compose TV + nav)
-2) Theme + focus ring
-3) Timer engine (monotonic clock)
-4) Preset grid + custom picker
-5) Running screen (3 styles)
-6) DPAD action mapping
-7) Sound cues + settings
-8) DataStore persistence
-9) Focus lock
-10) QA evidence pack
+## Technical Architecture (MVP)
+- Platform: Fire TV (Android), Kotlin + Jetpack Compose for TV
+- App shape: single-activity app with Compose Navigation (Home, Custom, Running, Settings)
+- Timer engine: monotonic clock (`SystemClock.elapsedRealtime`) with derived remaining time
+- Persistence: Jetpack DataStore for settings + presets
+- Audio: local short cues (start, halfway, last-10s, finish)
+- Backend: none for MVP
+
+## DPAD Interaction Matrix
+- Home
+  - DPAD: move focus across preset tiles
+  - OK: start selected preset
+  - Back: exit app
+- Running
+  - Left: pause/resume
+  - Right: reset (or long-press when lock enabled)
+  - Down: open style selector
+  - Back: confirm exit when running
+- Settings
+  - DPAD: move through toggles/sliders
+  - OK: toggle/select
+  - Back: return to previous screen
+
+## Execution Plan (ordered, estimated)
+1) App skeleton (Compose TV + nav) — 3h
+2) Theme + focus ring — 2h
+3) Timer engine (monotonic clock) — 4h
+4) Preset grid + custom picker — 3h
+5) Running screen (3 styles) — 4h
+6) DPAD action mapping — 2h
+7) Sound cues + settings — 2h
+8) DataStore persistence — 2h
+9) Focus lock — 2h
+10) QA evidence pack — 3h
+
+Estimated total: 27h
 
 ## Evidence Required for Demo
 - Screen recording: <=3 click start, custom timer, lock mode
 - Device test matrix: Fire Stick + Fire TV
 - Drift note from timed run
 - Commit list + APK path
+- DPAD checklist result (all screens, no lost focus)
