@@ -27,8 +27,12 @@ Android scaffold is in `android-app/`.
 
 Local bootstrap:
 ```bash
-cd android-app
-./bootstrap.sh
+make bootstrap
+```
+
+Build (after wrapper exists):
+```bash
+make build
 ```
 
 Current environment blocker:
@@ -40,6 +44,8 @@ cd android-app
 gradle wrapper --gradle-version 8.7
 ./gradlew assembleDebug
 ```
+
+Detailed setup: `docs/SETUP.md`
 
 ## Next Steps
 1. Generate Gradle wrapper + first successful `assembleDebug`
