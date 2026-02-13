@@ -23,6 +23,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -99,6 +101,13 @@ private fun PresetsScreen(
   ui: TimerUiState,
   onStartPreset: (Int) -> Unit,
 ) {
+  val firstPresetFocus = remember { FocusRequester() }
+
+  LaunchedEffect(Unit) {
+    // Explicit initial focus for TV/DPAD.
+    firstPresetFocus.requestFocus()
+  }
+
   Column(
     modifier = Modifier
       .fillMaxSize()
@@ -108,7 +117,7 @@ private fun PresetsScreen(
     Text("BigTimer", style = MaterialTheme.typography.headlineLarge)
     Text("Pick a preset", style = MaterialTheme.typography.titleLarge)
 
-    PresetRow(listOf(1, 2, 5, 10), onSelect = onStartPreset)
+    PresetRow(listOf(1, 2, 5, 10), onSelect = onStartPreset, firstButtonFocus = firstPresetFocus)
     PresetRow(listOf(15, 20, 30, 45), onSelect = onStartPreset)
 
     Text(
@@ -222,15 +231,27 @@ private fun RunningScreen(
 }
 
 @Composable
-private fun PresetRow(minutes: List<Int>, onSelect: (Int) -> Unit) {
+private fun PresetRow(
+  minutes: List<Int>,
+  onSelect: (Int) -> Unit,
+  firstButtonFocus: FocusRequester? = null,
+) {
   Row(
     modifier = Modifier.fillMaxWidth(),
     horizontalArrangement = Arrangement.spacedBy(10.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
-    minutes.forEach { min ->
-      FocusRingButton(onClick = { onSelect(min) }) {
-        Text("${min}m")
+    minutes.forEachIndexed { idx, min ->
+      val focusMod = if (idx == 0 && firstButtonFocus != null) {
+        Modifier.focusRequester(firstButtonFocus)
+      } else {
+        Modifier
+      }
+
+      Box(modifier = focusMod) {
+        FocusRingButton(onClick = { onSelect(min) }) {
+          Text("${min}m")
+        }
       }
     }
   }
