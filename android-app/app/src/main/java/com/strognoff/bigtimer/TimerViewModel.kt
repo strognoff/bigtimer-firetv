@@ -50,6 +50,15 @@ class TimerViewModel {
     state = state.copy(focusLockEnabled = !state.focusLockEnabled)
   }
 
+  fun cycleStyle() {
+    val next = when (state.style) {
+      TimerStyle.Numbers -> TimerStyle.Pie
+      TimerStyle.Pie -> TimerStyle.Bar
+      TimerStyle.Bar -> TimerStyle.Numbers
+    }
+    state = state.copy(style = next)
+  }
+
   fun reset() {
     startedAtMs = null
     pausedAtMs = null

@@ -64,10 +64,34 @@ fun BigTimerApp() {
       .padding(24.dp)
       .onKeyEvent { ev ->
         // Back should confirm exit while running/paused.
-        if (ev.type == KeyEventType.KeyUp && ev.key == Key.Back) {
-          if (ui.phase == TimerPhase.Running || ui.phase == TimerPhase.Paused) {
-            showExitConfirm = true
-            return@onKeyEvent true
+        if (ev.type == KeyEventType.KeyUp) {
+          when (ev.key) {
+            Key.Back -> {
+              if (ui.phase == TimerPhase.Running || ui.phase == TimerPhase.Paused) {
+                showExitConfirm = true
+                return@onKeyEvent true
+              }
+            }
+            Key.DirectionLeft -> {
+              if (!showExitConfirm) {
+                if (ui.phase == TimerPhase.Running) vm.pause()
+                else if (ui.phase == TimerPhase.Paused) vm.resume()
+                return@onKeyEvent true
+              }
+            }
+            Key.DirectionRight -> {
+              if (!showExitConfirm) {
+                if (!ui.focusLockEnabled) vm.reset()
+                return@onKeyEvent true
+              }
+            }
+            Key.DirectionDown -> {
+              if (!showExitConfirm) {
+                vm.cycleStyle()
+                return@onKeyEvent true
+              }
+            }
+            else -> {}
           }
         }
         false
@@ -88,6 +112,7 @@ fun BigTimerApp() {
 
     Text("BigTimer", style = MaterialTheme.typography.headlineLarge)
     Text("Phase: ${ui.phase}")
+    Text("Style: ${ui.style}")
     Text("Time: ${formatClock(ui.remainingSeconds)}", style = MaterialTheme.typography.displaySmall)
 
     Text("Presets")

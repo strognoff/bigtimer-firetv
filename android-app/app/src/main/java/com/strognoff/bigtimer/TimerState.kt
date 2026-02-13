@@ -7,11 +7,18 @@ sealed interface TimerPhase {
   data object Finished : TimerPhase
 }
 
+enum class TimerStyle {
+  Numbers,
+  Pie,
+  Bar,
+}
+
 data class TimerUiState(
   val phase: TimerPhase = TimerPhase.Idle,
   val totalSeconds: Int = 0,
   val remainingSeconds: Int = 0,
   val focusLockEnabled: Boolean = false,
+  val style: TimerStyle = TimerStyle.Numbers,
 )
 
 fun formatClock(totalSeconds: Int): String {
