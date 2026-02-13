@@ -31,6 +31,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+// (no AlertDialog in current deps; using inline confirm UI)
 import androidx.compose.ui.unit.Dp
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
@@ -48,6 +49,7 @@ class MainActivity : ComponentActivity() {
 fun BigTimerApp() {
   val vm = TimerViewModel()
   val ui = vm.state
+  var showExitConfirm by remember { mutableStateOf(false) }
 
   LaunchedEffect(ui.phase, ui.totalSeconds) {
     while (ui.phase == TimerPhase.Running) {
@@ -59,9 +61,31 @@ fun BigTimerApp() {
   Column(
     modifier = Modifier
       .fillMaxSize()
-      .padding(24.dp),
+      .padding(24.dp)
+      .onKeyEvent { ev ->
+        // Back should confirm exit while running/paused.
+        if (ev.type == KeyEventType.KeyUp && ev.key == Key.Back) {
+          if (ui.phase == TimerPhase.Running || ui.phase == TimerPhase.Paused) {
+            showExitConfirm = true
+            return@onKeyEvent true
+          }
+        }
+        false
+      },
     verticalArrangement = Arrangement.spacedBy(20.dp),
   ) {
+    if (showExitConfirm) {
+      Text("Exit timer?", style = MaterialTheme.typography.titleLarge)
+      Text("Your timer will be reset.")
+      Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        FocusRingButton(onClick = {
+          vm.reset()
+          showExitConfirm = false
+        }) { Text("Exit") }
+        FocusRingButton(onClick = { showExitConfirm = false }) { Text("Cancel") }
+      }
+    }
+
     Text("BigTimer", style = MaterialTheme.typography.headlineLarge)
     Text("Phase: ${ui.phase}")
     Text("Time: ${formatClock(ui.remainingSeconds)}", style = MaterialTheme.typography.displaySmall)
