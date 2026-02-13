@@ -63,7 +63,10 @@ class TimerViewModel {
     startedAtMs = null
     pausedAtMs = null
     pausedTotalMs = 0
-    state = TimerUiState(focusLockEnabled = state.focusLockEnabled)
+    state = TimerUiState(
+      focusLockEnabled = state.focusLockEnabled,
+      style = state.style,
+    )
   }
 
   /**
