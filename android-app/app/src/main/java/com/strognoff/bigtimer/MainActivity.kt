@@ -22,7 +22,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -52,12 +54,34 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun BigTimerApp() {
+  val context = LocalContext.current
+  val settingsStore = remember { TimerSettingsStore(context) }
+  val persisted by settingsStore.settingsFlow.collectAsState(initial = TimerPersistedSettings())
+
   // Keep VM stable across recompositions (TV focus changes can recompose often).
   val vm = remember { TimerViewModel() }
   val ui = vm.state
 
   // (Spec) Compose TV + navigation: keep it simple (presets → running).
   val nav = rememberNavController()
+
+  LaunchedEffect(persisted) {
+    vm.applyPersistedSettings(
+      focusLockEnabled = persisted.focusLockEnabled,
+      style = persisted.style,
+      lastCustomMinutes = persisted.lastCustomMinutes,
+    )
+  }
+
+  LaunchedEffect(ui.focusLockEnabled, ui.style, ui.lastCustomMinutes) {
+    settingsStore.save(
+      TimerPersistedSettings(
+        focusLockEnabled = ui.focusLockEnabled,
+        style = ui.style,
+        lastCustomMinutes = ui.lastCustomMinutes,
+      )
+    )
+  }
 
   LaunchedEffect(ui.phase, ui.totalSeconds) {
     while (ui.phase == TimerPhase.Running) {
@@ -83,6 +107,8 @@ fun BigTimerApp() {
 
     composable("custom") {
       CustomDurationScreen(
+        initialMinutes = ui.lastCustomMinutes,
+        onMinutesChange = vm::setLastCustomMinutes,
         onStart = { minutes ->
           vm.startPreset(minutes)
           nav.navigate("running")
@@ -145,10 +171,12 @@ private fun PresetsScreen(
 
 @Composable
 private fun CustomDurationScreen(
+  initialMinutes: Int,
+  onMinutesChange: (Int) -> Unit,
   onStart: (Int) -> Unit,
   onBack: () -> Unit,
 ) {
-  var minutes by remember { mutableStateOf(10) }
+  var minutes by remember(initialMinutes) { mutableStateOf(initialMinutes.coerceIn(1, 180)) }
 
   Column(
     modifier = Modifier
@@ -160,9 +188,18 @@ private fun CustomDurationScreen(
     Text("Minutes: $minutes", style = MaterialTheme.typography.displaySmall)
 
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-      FocusRingButton(onClick = { minutes = (minutes - 1).coerceAtLeast(1) }) { Text("-1m") }
-      FocusRingButton(onClick = { minutes = (minutes + 1).coerceAtMost(180) }) { Text("+1m") }
-      FocusRingButton(onClick = { minutes = (minutes + 5).coerceAtMost(180) }) { Text("+5m") }
+      FocusRingButton(onClick = {
+        minutes = (minutes - 1).coerceAtLeast(1)
+        onMinutesChange(minutes)
+      }) { Text("-1m") }
+      FocusRingButton(onClick = {
+        minutes = (minutes + 1).coerceAtMost(180)
+        onMinutesChange(minutes)
+      }) { Text("+1m") }
+      FocusRingButton(onClick = {
+        minutes = (minutes + 5).coerceAtMost(180)
+        onMinutesChange(minutes)
+      }) { Text("+5m") }
     }
 
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

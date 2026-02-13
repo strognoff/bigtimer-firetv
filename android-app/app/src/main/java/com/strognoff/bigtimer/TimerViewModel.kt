@@ -13,7 +13,8 @@ class TimerViewModel {
   private var pausedTotalMs: Long = 0
 
   fun startPreset(minutes: Int) {
-    val total = (minutes * 60).coerceAtLeast(0)
+    val safeMinutes = minutes.coerceAtLeast(0)
+    val total = (safeMinutes * 60).coerceAtLeast(0)
     val now = nowElapsedRealtimeMs()
 
     startedAtMs = now
@@ -24,6 +25,7 @@ class TimerViewModel {
       phase = if (total == 0) TimerPhase.Finished else TimerPhase.Running,
       totalSeconds = total,
       remainingSeconds = total,
+      lastCustomMinutes = safeMinutes.coerceIn(1, 180),
     )
   }
 
@@ -57,6 +59,18 @@ class TimerViewModel {
       TimerStyle.Bar -> TimerStyle.Numbers
     }
     state = state.copy(style = next)
+  }
+
+  fun setLastCustomMinutes(minutes: Int) {
+    state = state.copy(lastCustomMinutes = minutes.coerceIn(1, 180))
+  }
+
+  fun applyPersistedSettings(focusLockEnabled: Boolean, style: TimerStyle, lastCustomMinutes: Int) {
+    state = state.copy(
+      focusLockEnabled = focusLockEnabled,
+      style = style,
+      lastCustomMinutes = lastCustomMinutes.coerceIn(1, 180),
+    )
   }
 
   fun reset() {
