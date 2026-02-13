@@ -148,7 +148,7 @@ fun BigTimerApp() {
     }
 
     Text(
-      "MVP shell: timer ticking + DPAD focus behaviors next.",
+      "Controls: Left=Pause/Resume · Right=Reset (lock off) · Down=Style · Back=Exit confirm",
       style = MaterialTheme.typography.bodyLarge,
     )
   }

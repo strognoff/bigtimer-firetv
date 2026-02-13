@@ -4,6 +4,12 @@
 - JDK 17+
 - Gradle (for initial wrapper generation only)
 - Android SDK (platform 34)
+- `adb` (for device install/testing)
+
+Quick check:
+```bash
+./scripts/check-prereqs.sh
+```
 
 ## First-time bootstrap
 ```bash
@@ -17,6 +23,21 @@ Install Gradle, then rerun bootstrap:
 ```bash
 cd android-app
 ./bootstrap.sh
+```
+
+## If `adb` is missing
+Install Android platform tools.
+
+Ubuntu/Debian:
+```bash
+sudo apt-get update
+sudo apt-get install -y android-sdk-platform-tools
+```
+
+Then verify:
+```bash
+adb version
+adb devices
 ```
 
 ## Expected output

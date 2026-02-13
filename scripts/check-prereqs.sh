@@ -21,7 +21,13 @@ check "ADB" adb
 if [[ -n "${ANDROID_HOME:-}" ]]; then
   echo "[OK] ANDROID_HOME=$ANDROID_HOME"
 else
-  echo "[WARN] ANDROID_HOME not set"
+  echo "[WARN] ANDROID_HOME not set (needed for adb/emulator + SDK tools)"
+fi
+
+if [[ -n "${JAVA_HOME:-}" ]]; then
+  echo "[OK] JAVA_HOME=$JAVA_HOME"
+else
+  echo "[WARN] JAVA_HOME not set (using system java)"
 fi
 
 if [[ $fail -ne 0 ]]; then
