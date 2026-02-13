@@ -113,7 +113,20 @@ fun BigTimerApp() {
     Text("BigTimer", style = MaterialTheme.typography.headlineLarge)
     Text("Phase: ${ui.phase}")
     Text("Style: ${ui.style}")
-    Text("Time: ${formatClock(ui.remainingSeconds)}", style = MaterialTheme.typography.displaySmall)
+
+    when (ui.style) {
+      TimerStyle.Numbers -> {
+        Text("Time: ${formatClock(ui.remainingSeconds)}", style = MaterialTheme.typography.displaySmall)
+      }
+      TimerStyle.Pie -> {
+        Text("(Pie style placeholder)")
+        Text("Time: ${formatClock(ui.remainingSeconds)}", style = MaterialTheme.typography.displaySmall)
+      }
+      TimerStyle.Bar -> {
+        Text("(Bar style placeholder)")
+        Text("Time: ${formatClock(ui.remainingSeconds)}", style = MaterialTheme.typography.displaySmall)
+      }
+    }
 
     Text("Presets")
     PresetRow(listOf(1, 2, 5, 10), onSelect = vm::startPreset)
