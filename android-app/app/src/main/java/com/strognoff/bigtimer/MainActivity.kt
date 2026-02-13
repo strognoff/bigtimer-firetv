@@ -77,6 +77,17 @@ fun BigTimerApp() {
           vm.startPreset(it)
           nav.navigate("running")
         },
+        onOpenCustom = { nav.navigate("custom") },
+      )
+    }
+
+    composable("custom") {
+      CustomDurationScreen(
+        onStart = { minutes ->
+          vm.startPreset(minutes)
+          nav.navigate("running")
+        },
+        onBack = { nav.popBackStack() },
       )
     }
 
@@ -100,6 +111,7 @@ fun BigTimerApp() {
 private fun PresetsScreen(
   ui: TimerUiState,
   onStartPreset: (Int) -> Unit,
+  onOpenCustom: () -> Unit,
 ) {
   val firstPresetFocus = remember { FocusRequester() }
 
@@ -120,10 +132,43 @@ private fun PresetsScreen(
     PresetRow(listOf(1, 2, 5, 10), onSelect = onStartPreset, firstButtonFocus = firstPresetFocus)
     PresetRow(listOf(15, 20, 30, 45), onSelect = onStartPreset)
 
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+      FocusRingButton(onClick = onOpenCustom) { Text("Custom") }
+    }
+
     Text(
       "Current: ${formatClock(ui.remainingSeconds)} · Style: ${ui.style}",
       style = MaterialTheme.typography.bodyLarge,
     )
+  }
+}
+
+@Composable
+private fun CustomDurationScreen(
+  onStart: (Int) -> Unit,
+  onBack: () -> Unit,
+) {
+  var minutes by remember { mutableStateOf(10) }
+
+  Column(
+    modifier = Modifier
+      .fillMaxSize()
+      .padding(24.dp),
+    verticalArrangement = Arrangement.spacedBy(20.dp),
+  ) {
+    Text("Custom timer", style = MaterialTheme.typography.headlineLarge)
+    Text("Minutes: $minutes", style = MaterialTheme.typography.displaySmall)
+
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+      FocusRingButton(onClick = { minutes = (minutes - 1).coerceAtLeast(1) }) { Text("-1m") }
+      FocusRingButton(onClick = { minutes = (minutes + 1).coerceAtMost(180) }) { Text("+1m") }
+      FocusRingButton(onClick = { minutes = (minutes + 5).coerceAtMost(180) }) { Text("+5m") }
+    }
+
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+      FocusRingButton(onClick = { onStart(minutes) }) { Text("Start") }
+      FocusRingButton(onClick = onBack) { Text("Back") }
+    }
   }
 }
 
