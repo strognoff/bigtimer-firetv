@@ -20,7 +20,7 @@ class TimerViewModel {
     pausedAtMs = null
     pausedTotalMs = 0
 
-    state = TimerUiState(
+    state = state.copy(
       phase = if (total == 0) TimerPhase.Finished else TimerPhase.Running,
       totalSeconds = total,
       remainingSeconds = total,
@@ -46,11 +46,15 @@ class TimerViewModel {
     }
   }
 
+  fun toggleFocusLock() {
+    state = state.copy(focusLockEnabled = !state.focusLockEnabled)
+  }
+
   fun reset() {
     startedAtMs = null
     pausedAtMs = null
     pausedTotalMs = 0
-    state = TimerUiState()
+    state = TimerUiState(focusLockEnabled = state.focusLockEnabled)
   }
 
   /**

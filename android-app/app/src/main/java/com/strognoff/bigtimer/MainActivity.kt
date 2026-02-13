@@ -26,6 +26,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.Dp
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
@@ -68,7 +73,16 @@ fun BigTimerApp() {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
       FocusRingButton(onClick = vm::pause, enabled = ui.phase == TimerPhase.Running) { Text("Pause") }
       FocusRingButton(onClick = vm::resume, enabled = ui.phase == TimerPhase.Paused) { Text("Resume") }
-      FocusRingButton(onClick = vm::reset) { Text("Reset") }
+      FocusRingButton(
+        onClick = vm::reset,
+        enabled = true,
+        requireLongPress = ui.focusLockEnabled,
+        longPressLabel = "Hold OK to reset",
+      ) { Text("Reset") }
+
+      FocusRingButton(onClick = vm::toggleFocusLock) {
+        Text(if (ui.focusLockEnabled) "Lock: ON" else "Lock: OFF")
+      }
     }
 
     Text(
@@ -98,10 +112,14 @@ private fun FocusRingButton(
   onClick: () -> Unit,
   enabled: Boolean = true,
   ringWidth: Dp = 3.dp,
+  requireLongPress: Boolean = false,
+  longPressMs: Long = 900,
+  longPressLabel: String = "Hold OK",
   content: @Composable () -> Unit,
 ) {
   val interaction = remember { MutableInteractionSource() }
   var focused by remember { mutableStateOf(false) }
+  var okDownAtMs by remember { mutableStateOf<Long?>(null) }
 
   Box(
     modifier = Modifier
@@ -111,10 +129,41 @@ private fun FocusRingButton(
         color = if (focused) Color(0xFF7AA2FF) else Color.Transparent,
         shape = RectangleShape,
       )
-      .onFocusChanged { focused = it.isFocused },
+      .onFocusChanged {
+        focused = it.isFocused
+        if (!it.isFocused) okDownAtMs = null
+      }
+      .onKeyEvent { ev ->
+        if (!requireLongPress) return@onKeyEvent false
+        if (!focused) return@onKeyEvent false
+
+        val isOk = ev.key == Key.Enter || ev.key == Key.DirectionCenter
+        if (!isOk) return@onKeyEvent false
+
+        when (ev.type) {
+          KeyEventType.KeyDown -> {
+            if (okDownAtMs == null) okDownAtMs = System.currentTimeMillis()
+            true
+          }
+          KeyEventType.KeyUp -> {
+            val downAt = okDownAtMs
+            okDownAtMs = null
+            if (downAt != null) {
+              val held = System.currentTimeMillis() - downAt
+              if (held >= longPressMs) {
+                onClick()
+              }
+            }
+            true
+          }
+          else -> false
+        }
+      },
   ) {
     Button(
-      onClick = onClick,
+      onClick = {
+        if (!requireLongPress) onClick()
+      },
       enabled = enabled,
       interactionSource = interaction,
       colors = ButtonDefaults.buttonColors(
@@ -122,6 +171,9 @@ private fun FocusRingButton(
       ),
     ) {
       content()
+      if (requireLongPress && focused) {
+        Text("  ($longPressLabel)")
+      }
     }
   }
 }

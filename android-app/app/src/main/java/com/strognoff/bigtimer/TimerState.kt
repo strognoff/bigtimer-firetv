@@ -11,6 +11,7 @@ data class TimerUiState(
   val phase: TimerPhase = TimerPhase.Idle,
   val totalSeconds: Int = 0,
   val remainingSeconds: Int = 0,
+  val focusLockEnabled: Boolean = false,
 )
 
 fun formatClock(totalSeconds: Int): String {
