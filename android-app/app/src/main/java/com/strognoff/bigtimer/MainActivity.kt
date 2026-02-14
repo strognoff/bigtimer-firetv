@@ -1,6 +1,8 @@
 package com.strognoff.bigtimer
 
 import android.os.Bundle
+import android.media.SoundPool
+import android.media.AudioAttributes
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -62,6 +64,33 @@ fun BigTimerApp() {
   val vm = remember { TimerViewModel() }
   val ui = vm.state
 
+  // Sound pool for cues
+  val soundPool = remember {
+    SoundPool.Builder()
+      .setMaxStreams(2)
+      .setAudioAttributes(
+        AudioAttributes.Builder()
+          .setUsage(AudioAttributes.USAGE_MEDIA)
+          .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+          .build()
+      )
+      .build()
+  }
+
+  // Wire sound events
+  LaunchedEffect(Unit) {
+    vm.onSoundEvent = { event ->
+      // Simple beep sounds using system FX
+      val fxType = when (event) {
+        TimerViewModel.SoundEvent.START -> android.media.AudioManager.FX_FOCUS_NAVIGATION_UP
+        TimerViewModel.SoundEvent.FINISH -> android.media.AudioManager.FX_KEY_CLICK
+        TimerViewModel.SoundEvent.HALFWAY -> android.media.AudioManager.FX_FOCUS_NAVIGATION_DOWN
+        TimerViewModel.SoundEvent.LAST_TEN -> android.media.AudioManager.FX_KEYPRESS_STANDARD
+      }
+      soundPool.play(soundPool.load(context, fxType, 1), 1.0f, 1.0f, 1, 0, 1.0f)
+    }
+  }
+
   // (Spec) Compose TV + navigation: keep it simple (presets → running).
   val nav = rememberNavController()
 
@@ -70,15 +99,21 @@ fun BigTimerApp() {
       focusLockEnabled = persisted.focusLockEnabled,
       style = persisted.style,
       lastCustomMinutes = persisted.lastCustomMinutes,
+      soundEnabled = persisted.soundEnabled,
+      soundHalfway = persisted.soundHalfway,
+      soundLastTen = persisted.soundLastTen,
     )
   }
 
-  LaunchedEffect(ui.focusLockEnabled, ui.style, ui.lastCustomMinutes) {
+  LaunchedEffect(ui.focusLockEnabled, ui.style, ui.lastCustomMinutes, ui.soundEnabled, ui.soundHalfway, ui.soundLastTen) {
     settingsStore.save(
       TimerPersistedSettings(
         focusLockEnabled = ui.focusLockEnabled,
         style = ui.style,
         lastCustomMinutes = ui.lastCustomMinutes,
+        soundEnabled = ui.soundEnabled,
+        soundHalfway = ui.soundHalfway,
+        soundLastTen = ui.soundLastTen,
       )
     )
   }
@@ -128,6 +163,9 @@ fun BigTimerApp() {
         },
         onToggleLock = vm::toggleFocusLock,
         onCycleStyle = vm::cycleStyle,
+        onToggleSound = { vm.toggleSound() },
+        onToggleHalfway = { vm.toggleHalfway() },
+        onToggleLastTen = { vm.toggleLastTen() },
       )
     }
   }
@@ -217,8 +255,12 @@ private fun RunningScreen(
   onReset: () -> Unit,
   onToggleLock: () -> Unit,
   onCycleStyle: () -> Unit,
+  onToggleSound: () -> Unit,
+  onToggleHalfway: () -> Unit,
+  onToggleLastTen: () -> Unit,
 ) {
   var showExitConfirm by remember { mutableStateOf(false) }
+  var showSoundSettings by remember { mutableStateOf(false) }
 
   Column(
     modifier = Modifier
@@ -302,6 +344,25 @@ private fun RunningScreen(
 
       FocusRingButton(onClick = onToggleLock) {
         Text(if (ui.focusLockEnabled) "Lock: ON" else "Lock: OFF")
+      }
+
+      FocusRingButton(onClick = { showSoundSettings = !showSoundSettings }) {
+        Text("Sounds")
+      }
+    }
+
+    if (showSoundSettings) {
+      Text("Sound settings:", style = MaterialTheme.typography.titleMedium)
+      Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        FocusRingButton(onClick = onToggleSound) {
+          Text(if (ui.soundEnabled) "Sounds: ON" else "Sounds: OFF")
+        }
+        FocusRingButton(onClick = onToggleHalfway) {
+          Text(if (ui.soundHalfway) "Halfway: ON" else "Halfway: OFF")
+        }
+        FocusRingButton(onClick = onToggleLastTen) {
+          Text(if (ui.soundLastTen) "Last10: ON" else "Last10: OFF")
+        }
       }
     }
 
