@@ -22,7 +22,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -37,6 +41,9 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,9 +54,34 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun BigTimerApp() {
-  val vm = TimerViewModel()
+  val context = LocalContext.current
+  val settingsStore = remember { TimerSettingsStore(context) }
+  val persisted by settingsStore.settingsFlow.collectAsState(initial = TimerPersistedSettings())
+
+  // Keep VM stable across recompositions (TV focus changes can recompose often).
+  val vm = remember { TimerViewModel() }
   val ui = vm.state
-  var showExitConfirm by remember { mutableStateOf(false) }
+
+  // (Spec) Compose TV + navigation: keep it simple (presets → running).
+  val nav = rememberNavController()
+
+  LaunchedEffect(persisted) {
+    vm.applyPersistedSettings(
+      focusLockEnabled = persisted.focusLockEnabled,
+      style = persisted.style,
+      lastCustomMinutes = persisted.lastCustomMinutes,
+    )
+  }
+
+  LaunchedEffect(ui.focusLockEnabled, ui.style, ui.lastCustomMinutes) {
+    settingsStore.save(
+      TimerPersistedSettings(
+        focusLockEnabled = ui.focusLockEnabled,
+        style = ui.style,
+        lastCustomMinutes = ui.lastCustomMinutes,
+      )
+    )
+  }
 
   LaunchedEffect(ui.phase, ui.totalSeconds) {
     while (ui.phase == TimerPhase.Running) {
@@ -57,6 +89,136 @@ fun BigTimerApp() {
       delay(250)
     }
   }
+
+  NavHost(
+    navController = nav,
+    startDestination = "presets",
+  ) {
+    composable("presets") {
+      PresetsScreen(
+        ui = ui,
+        onStartPreset = {
+          vm.startPreset(it)
+          nav.navigate("running")
+        },
+        onOpenCustom = { nav.navigate("custom") },
+      )
+    }
+
+    composable("custom") {
+      CustomDurationScreen(
+        initialMinutes = ui.lastCustomMinutes,
+        onMinutesChange = vm::setLastCustomMinutes,
+        onStart = { minutes ->
+          vm.startPreset(minutes)
+          nav.navigate("running")
+        },
+        onBack = { nav.popBackStack() },
+      )
+    }
+
+    composable("running") {
+      RunningScreen(
+        ui = ui,
+        onPause = vm::pause,
+        onResume = vm::resume,
+        onReset = {
+          vm.reset()
+          nav.popBackStack("presets", inclusive = false)
+        },
+        onToggleLock = vm::toggleFocusLock,
+        onCycleStyle = vm::cycleStyle,
+      )
+    }
+  }
+}
+
+@Composable
+private fun PresetsScreen(
+  ui: TimerUiState,
+  onStartPreset: (Int) -> Unit,
+  onOpenCustom: () -> Unit,
+) {
+  val firstPresetFocus = remember { FocusRequester() }
+
+  LaunchedEffect(Unit) {
+    // Explicit initial focus for TV/DPAD.
+    firstPresetFocus.requestFocus()
+  }
+
+  Column(
+    modifier = Modifier
+      .fillMaxSize()
+      .padding(24.dp),
+    verticalArrangement = Arrangement.spacedBy(20.dp),
+  ) {
+    Text("BigTimer", style = MaterialTheme.typography.headlineLarge)
+    Text("Pick a preset", style = MaterialTheme.typography.titleLarge)
+
+    PresetRow(listOf(1, 2, 5, 10), onSelect = onStartPreset, firstButtonFocus = firstPresetFocus)
+    PresetRow(listOf(15, 20, 30, 45), onSelect = onStartPreset)
+
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+      FocusRingButton(onClick = onOpenCustom) { Text("Custom") }
+    }
+
+    Text(
+      "Current: ${formatClock(ui.remainingSeconds)} · Style: ${ui.style}",
+      style = MaterialTheme.typography.bodyLarge,
+    )
+  }
+}
+
+@Composable
+private fun CustomDurationScreen(
+  initialMinutes: Int,
+  onMinutesChange: (Int) -> Unit,
+  onStart: (Int) -> Unit,
+  onBack: () -> Unit,
+) {
+  var minutes by remember(initialMinutes) { mutableStateOf(initialMinutes.coerceIn(1, 180)) }
+
+  Column(
+    modifier = Modifier
+      .fillMaxSize()
+      .padding(24.dp),
+    verticalArrangement = Arrangement.spacedBy(20.dp),
+  ) {
+    Text("Custom timer", style = MaterialTheme.typography.headlineLarge)
+    Text("Minutes: $minutes", style = MaterialTheme.typography.displaySmall)
+
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+      FocusRingButton(onClick = {
+        minutes = (minutes - 1).coerceAtLeast(1)
+        onMinutesChange(minutes)
+      }) { Text("-1m") }
+      FocusRingButton(onClick = {
+        minutes = (minutes + 1).coerceAtMost(180)
+        onMinutesChange(minutes)
+      }) { Text("+1m") }
+      FocusRingButton(onClick = {
+        minutes = (minutes + 5).coerceAtMost(180)
+        onMinutesChange(minutes)
+      }) { Text("+5m") }
+    }
+
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+      FocusRingButton(onClick = { onStart(minutes) }) { Text("Start") }
+      FocusRingButton(onClick = onBack) { Text("Back") }
+    }
+  }
+}
+
+@Composable
+private fun RunningScreen(
+  ui: TimerUiState,
+  onPause: () -> Unit,
+  onResume: () -> Unit,
+  onReset: () -> Unit,
+  onToggleLock: () -> Unit,
+  onCycleStyle: () -> Unit,
+) {
+  var showExitConfirm by remember { mutableStateOf(false) }
 
   Column(
     modifier = Modifier
@@ -74,20 +236,20 @@ fun BigTimerApp() {
             }
             Key.DirectionLeft -> {
               if (!showExitConfirm) {
-                if (ui.phase == TimerPhase.Running) vm.pause()
-                else if (ui.phase == TimerPhase.Paused) vm.resume()
+                if (ui.phase == TimerPhase.Running) onPause()
+                else if (ui.phase == TimerPhase.Paused) onResume()
                 return@onKeyEvent true
               }
             }
             Key.DirectionRight -> {
               if (!showExitConfirm) {
-                if (!ui.focusLockEnabled) vm.reset()
+                if (!ui.focusLockEnabled) onReset()
                 return@onKeyEvent true
               }
             }
             Key.DirectionDown -> {
               if (!showExitConfirm) {
-                vm.cycleStyle()
+                onCycleStyle()
                 return@onKeyEvent true
               }
             }
@@ -103,7 +265,7 @@ fun BigTimerApp() {
       Text("Your timer will be reset.")
       Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         FocusRingButton(onClick = {
-          vm.reset()
+          onReset()
           showExitConfirm = false
         }) { Text("Exit") }
         FocusRingButton(onClick = { showExitConfirm = false }) { Text("Cancel") }
@@ -128,21 +290,17 @@ fun BigTimerApp() {
       }
     }
 
-    Text("Presets")
-    PresetRow(listOf(1, 2, 5, 10), onSelect = vm::startPreset)
-    PresetRow(listOf(15, 20, 30, 45), onSelect = vm::startPreset)
-
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-      FocusRingButton(onClick = vm::pause, enabled = ui.phase == TimerPhase.Running) { Text("Pause") }
-      FocusRingButton(onClick = vm::resume, enabled = ui.phase == TimerPhase.Paused) { Text("Resume") }
+      FocusRingButton(onClick = onPause, enabled = ui.phase == TimerPhase.Running) { Text("Pause") }
+      FocusRingButton(onClick = onResume, enabled = ui.phase == TimerPhase.Paused) { Text("Resume") }
       FocusRingButton(
-        onClick = vm::reset,
+        onClick = onReset,
         enabled = true,
         requireLongPress = ui.focusLockEnabled,
         longPressLabel = "Hold OK to reset",
       ) { Text("Reset") }
 
-      FocusRingButton(onClick = vm::toggleFocusLock) {
+      FocusRingButton(onClick = onToggleLock) {
         Text(if (ui.focusLockEnabled) "Lock: ON" else "Lock: OFF")
       }
     }
@@ -155,15 +313,27 @@ fun BigTimerApp() {
 }
 
 @Composable
-private fun PresetRow(minutes: List<Int>, onSelect: (Int) -> Unit) {
+private fun PresetRow(
+  minutes: List<Int>,
+  onSelect: (Int) -> Unit,
+  firstButtonFocus: FocusRequester? = null,
+) {
   Row(
     modifier = Modifier.fillMaxWidth(),
     horizontalArrangement = Arrangement.spacedBy(10.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
-    minutes.forEach { min ->
-      FocusRingButton(onClick = { onSelect(min) }) {
-        Text("${min}m")
+    minutes.forEachIndexed { idx, min ->
+      val focusMod = if (idx == 0 && firstButtonFocus != null) {
+        Modifier.focusRequester(firstButtonFocus)
+      } else {
+        Modifier
+      }
+
+      Box(modifier = focusMod) {
+        FocusRingButton(onClick = { onSelect(min) }) {
+          Text("${min}m")
+        }
       }
     }
   }

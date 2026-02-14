@@ -19,6 +19,7 @@ data class TimerUiState(
   val remainingSeconds: Int = 0,
   val focusLockEnabled: Boolean = false,
   val style: TimerStyle = TimerStyle.Numbers,
+  val lastCustomMinutes: Int = 10,
 )
 
 fun formatClock(totalSeconds: Int): String {
