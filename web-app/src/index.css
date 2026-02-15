@@ -170,7 +170,11 @@ button {
   }
 }
 
-/* Reduced motion preference */
+/* ========================================
+   ACCESSIBILITY FEATURES
+   ======================================== */
+
+/* Reduced Motion - System preference */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -179,4 +183,194 @@ button {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Reduced Motion - Manual toggle */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+.reduce-motion .animate-fade-in,
+.reduce-motion .animate-pulse-slow,
+.reduce-motion .animate-glow {
+  animation: none !important;
+}
+
+.reduce-motion .btn-preset {
+  transition: none !important;
+}
+
+.reduce-motion .btn-preset:hover {
+  transform: none !important;
+}
+
+/* Large Text Mode */
+.large-text body,
+.large-text {
+  font-size: 120%;
+}
+
+.large-text .btn-preset {
+  font-size: 1.8rem;
+  padding: 1.8rem 2.4rem;
+}
+
+.large-text .timer-display {
+  font-size: 12rem;
+}
+
+@media (min-width: 768px) {
+  .large-text .timer-display {
+    font-size: 16rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .large-text .timer-display {
+    font-size: 20rem;
+  }
+}
+
+.large-text h1 {
+  font-size: 150% !important;
+}
+
+.large-text h2 {
+  font-size: 140% !important;
+}
+
+.large-text h3 {
+  font-size: 130% !important;
+}
+
+/* High Contrast Mode - overrides */
+.high-contrast body,
+.high-contrast {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.high-contrast .btn-preset {
+  border: 3px solid #ffffff !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+.high-contrast .btn-preset:hover,
+.high-contrast .btn-preset:focus {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.high-contrast .timer-display {
+  color: #ffff00 !important;
+  text-shadow: none !important;
+}
+
+.high-contrast .text-gray-400,
+.high-contrast .text-gray-500,
+.high-contrast .text-gray-600 {
+  color: #ffffff !important;
+}
+
+.high-contrast .bg-gray-800,
+.high-contrast .bg-gray-700,
+.high-contrast .bg-gray-900 {
+  background-color: #000000 !important;
+  border: 2px solid #ffffff !important;
+}
+
+/* Volume slider styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 12px;
+  border-radius: 6px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+input[type="range"]:focus {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Text input styling */
+input[type="text"] {
+  font-family: inherit;
+}
+
+input[type="text"]:focus {
+  border-color: var(--color-primary) !important;
+}
+
+/* ========================================
+   RESPONSIVE ADJUSTMENTS
+   ======================================== */
+
+/* Smaller screens */
+@media (max-width: 640px) {
+  .timer-display {
+    font-size: 6rem;
+  }
+  
+  .btn-preset {
+    padding: 1rem 1.5rem;
+    font-size: 1.2rem;
+  }
+  
+  h1 {
+    font-size: 2.5rem !important;
+  }
+}
+
+/* Ensure scrollable areas work on TV */
+.overflow-auto {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom scrollbar for overflow areas */
+.overflow-auto::-webkit-scrollbar {
+  width: 8px;
+}
+
+.overflow-auto::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }

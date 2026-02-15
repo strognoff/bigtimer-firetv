@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTimer, formatClock } from '../TimerContext';
+import { useSettings } from '../SettingsContext';
 
 export default function RunningScreen({ onNavigate }) {
   const { state, dispatch, TIMER_PHASES, TIMER_STYLES } = useTimer();
+  const { getActiveTheme, getAccessibilityVolume, setAudioVolume } = useSettings();
+  
   const [showConfirmExit, setShowConfirmExit] = useState(false);
   const [showSoundSettings, setShowSoundSettings] = useState(false);
-  const [focusIndex, setFocusIndex] = useState(0);
   const buttonRefs = useRef([]);
+  
+  const currentTheme = getActiveTheme();
 
   const handlePause = () => {
     dispatch({ type: 'PAUSE' });
@@ -95,10 +99,10 @@ export default function RunningScreen({ onNavigate }) {
     : 0;
 
   const progressColor = state.phase === TIMER_PHASES.FINISHED 
-    ? '#4CAF50' 
+    ? currentTheme.colors.accent 
     : state.phase === TIMER_PHASES.PAUSED 
       ? '#FFA726' 
-      : '#7AA2FF';
+      : currentTheme.colors.primary;
 
   // Calculate stroke dash array for pie chart
   const radius = 180;
@@ -106,10 +110,16 @@ export default function RunningScreen({ onNavigate }) {
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0b0f17] to-[#1e293b] flex flex-col items-center justify-center p-8">
+    <div 
+      className="min-h-screen flex flex-col items-center justify-center p-8"
+      style={{ background: currentTheme.gradients.running }}
+    >
       <div className="w-full max-w-5xl">
         {showConfirmExit ? (
-          <div className="text-center animate-fade-in">
+          <div 
+            className="text-center animate-fade-in"
+            style={{ background: 'transparent' }}
+          >
             <h2 className="text-6xl font-bold text-white mb-8">Exit timer?</h2>
             <p className="text-3xl text-gray-400 mb-12">Your timer will be reset.</p>
             <div className="flex justify-center gap-8">
@@ -130,14 +140,23 @@ export default function RunningScreen({ onNavigate }) {
           </div>
         ) : state.phase === TIMER_PHASES.FINISHED ? (
           // Finished state
-          <div className="text-center animate-pulse-slow">
-            <h1 className="text-8xl font-bold text-green-400 mb-8">Done!</h1>
+          <div 
+            className="text-center animate-pulse-slow"
+            style={{ background: 'transparent' }}
+          >
+            <h1 
+              className="text-8xl font-bold mb-8"
+              style={{ color: currentTheme.colors.accent }}
+            >
+              Done!
+            </h1>
             <p className="text-4xl text-gray-300 mb-12">
               {formatClock(state.totalSeconds)} completed
             </p>
             <button
               onClick={handleReset}
-              className="btn-preset bg-green-600 hover:bg-green-500 text-4xl px-16 py-8"
+              className="btn-preset text-4xl px-16 py-8"
+              style={{ backgroundColor: currentTheme.colors.accent }}
               autoFocus
             >
               OK
@@ -314,9 +333,12 @@ export default function RunningScreen({ onNavigate }) {
 
             {/* Sound Settings Panel */}
             {showSoundSettings && (
-              <div className="bg-gray-800/50 rounded-xl p-6 mb-8 animate-fade-in">
+              <div 
+                className="rounded-xl p-6 mb-8 animate-fade-in"
+                style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+              >
                 <h3 className="text-2xl font-bold text-white mb-4 text-center">Sound Settings</h3>
-                <div className="flex justify-center gap-4 flex-wrap">
+                <div className="flex justify-center gap-4 flex-wrap mb-6">
                   <button
                     onClick={() => dispatch({ type: 'TOGGLE_SOUND' })}
                     className={`btn-preset ${state.soundEnabled ? 'bg-green-600 hover:bg-green-500' : 'bg-gray-700 hover:bg-gray-600'}`}
@@ -335,6 +357,26 @@ export default function RunningScreen({ onNavigate }) {
                   >
                     🔟 Last 10s
                   </button>
+                </div>
+                
+                {/* Volume Control */}
+                <div className="flex items-center justify-center gap-4 max-w-md mx-auto">
+                  <span className="text-2xl">🔇</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={getAccessibilityVolume() * 100}
+                    onChange={(e) => setAudioVolume(parseInt(e.target.value) / 100)}
+                    className="flex-1 h-3 rounded-full appearance-none cursor-pointer"
+                    style={{ 
+                      background: `linear-gradient(to right, ${currentTheme.colors.primary} ${getAccessibilityVolume() * 100}%, #374151 ${getAccessibilityVolume() * 100}%)`
+                    }}
+                  />
+                  <span className="text-2xl">🔊</span>
+                  <span className="text-xl font-bold text-white w-16 text-right">
+                    {Math.round(getAccessibilityVolume() * 100)}%
+                  </span>
                 </div>
               </div>
             )}

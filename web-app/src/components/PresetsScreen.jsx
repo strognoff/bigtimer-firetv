@@ -1,9 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { useTimer, formatClock } from '../TimerContext';
+import { useSettings } from '../SettingsContext';
+import { getPresetColorClass } from '../themes';
 
 export default function PresetsScreen({ onNavigate }) {
   const { state, dispatch, TIMER_STYLES } = useTimer();
+  const { getActiveProfile, getActiveTheme, toggleProfileSwitcher } = useSettings();
+  
   const firstButtonRef = useRef(null);
+  const profile = getActiveProfile();
+  const currentTheme = getActiveTheme();
 
   const presetRows = [
     [1, 2, 5, 10],
@@ -19,14 +25,27 @@ export default function PresetsScreen({ onNavigate }) {
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'ArrowRight' || e.key === 'Tab') {
-        // Default behavior is fine
+      switch (e.key) {
+        case 's':
+        case 'S':
+          onNavigate('settings');
+          break;
+        case 'r':
+        case 'R':
+          onNavigate('routines');
+          break;
+        case 'p':
+        case 'P':
+          toggleProfileSwitcher();
+          break;
+        default:
+          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [onNavigate, toggleProfileSwitcher]);
 
   // Auto-focus first button for TV navigation
   useEffect(() => {
@@ -42,25 +61,33 @@ export default function PresetsScreen({ onNavigate }) {
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
   };
 
-  const getPresetColor = (minutes) => {
-    if (minutes <= 5) return 'bg-emerald-600 hover:bg-emerald-500';
-    if (minutes <= 15) return 'bg-blue-600 hover:bg-blue-500';
-    if (minutes <= 30) return 'bg-purple-600 hover:bg-purple-500';
-    if (minutes <= 60) return 'bg-orange-600 hover:bg-orange-500';
-    return 'bg-red-600 hover:bg-red-500';
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0b0f17] to-[#1e293b] flex flex-col items-center justify-center p-8">
+    <div 
+      className="min-h-screen flex flex-col items-center justify-center p-8"
+      style={{ background: currentTheme.gradients.running }}
+    >
       <div className="w-full max-w-5xl">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-7xl font-bold text-white mb-4">BigTimer</h1>
+        {/* Header with Profile */}
+        <div className="text-center mb-8">
+          <button
+            onClick={toggleProfileSwitcher}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-800/50 hover:bg-gray-700/50 transition-all mb-4"
+          >
+            <span className="text-2xl">{profile?.emoji}</span>
+            <span className="text-lg text-gray-300">{profile?.name}</span>
+            <span className="text-gray-500">▼</span>
+          </button>
+          <h1 
+            className="text-7xl font-bold mb-4"
+            style={{ color: currentTheme.colors.text }}
+          >
+            BigTimer
+          </h1>
           <p className="text-2xl text-gray-400">Pick a preset or create a custom timer</p>
         </div>
 
         {/* Preset Grid */}
-        <div className="space-y-6 mb-12">
+        <div className="space-y-6 mb-8">
           {presetRows.map((row, rowIndex) => (
             <div key={rowIndex} className="flex justify-center gap-4 flex-wrap">
               {row.map((minutes, colIndex) => (
@@ -68,7 +95,7 @@ export default function PresetsScreen({ onNavigate }) {
                   key={minutes}
                   ref={rowIndex === 0 && colIndex === 0 ? firstButtonRef : null}
                   onClick={() => handlePresetClick(minutes)}
-                  className={`btn-preset min-w-[140px] text-3xl py-8 ${getPresetColor(minutes)}`}
+                  className={`btn-preset min-w-[140px] text-3xl py-8 ${getPresetColorClass(minutes, profile?.theme)}`}
                 >
                   {formatPresetLabel(minutes)}
                 </button>
@@ -77,18 +104,38 @@ export default function PresetsScreen({ onNavigate }) {
           ))}
         </div>
 
-        {/* Custom Button */}
-        <div className="flex justify-center mb-12">
+        {/* Quick Actions */}
+        <div className="flex justify-center gap-4 mb-8 flex-wrap">
           <button
             onClick={() => onNavigate('custom')}
-            className="btn-preset bg-gray-700 hover:bg-gray-600 text-3xl px-16 py-6"
+            className="btn-preset bg-gray-700 hover:bg-gray-600 text-xl px-8 py-4"
           >
-            ⚙️ Custom Timer
+            ⚙️ Custom
+          </button>
+          <button
+            onClick={() => onNavigate('routines')}
+            className="btn-preset bg-gray-700 hover:bg-gray-600 text-xl px-8 py-4"
+          >
+            📋 Routines
+            {profile?.routines?.length > 0 && (
+              <span className="ml-2 px-2 py-0.5 rounded-full bg-green-600 text-sm">
+                {profile.routines.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => onNavigate('settings')}
+            className="btn-preset bg-gray-700 hover:bg-gray-600 text-xl px-8 py-4"
+          >
+            🎨 Settings
           </button>
         </div>
 
-        {/* Settings Summary */}
-        <div className="bg-gray-800/40 rounded-xl p-6 max-w-2xl mx-auto">
+        {/* Current Settings Summary */}
+        <div 
+          className="rounded-xl p-6 max-w-2xl mx-auto"
+          style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+        >
           <div className="flex justify-center gap-8 text-xl text-gray-400 flex-wrap">
             <span className="flex items-center gap-2">
               <span className="text-2xl">🎨</span>
@@ -115,8 +162,9 @@ export default function PresetsScreen({ onNavigate }) {
         </div>
 
         {/* Footer Help */}
-        <div className="text-center text-lg text-gray-600 mt-8">
+        <div className="text-center text-lg text-gray-600 mt-8 space-y-1">
           <p>Use DPAD to navigate • Press OK to select</p>
+          <p>S = Settings • R = Routines • P = Switch Profile</p>
         </div>
       </div>
     </div>

@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTimer } from '../TimerContext';
+import { useSettings } from '../SettingsContext';
 
 export default function CustomScreen({ onNavigate }) {
   const { state, dispatch } = useTimer();
+  const { getActiveTheme } = useSettings();
   const [minutes, setMinutes] = useState(state.lastCustomMinutes || 5);
   const startButtonRef = useRef(null);
+  const currentTheme = getActiveTheme();
 
   const handleStart = () => {
     dispatch({ type: 'SET_CUSTOM_MINUTES', payload: { minutes } });
@@ -71,7 +74,10 @@ export default function CustomScreen({ onNavigate }) {
   const quickValues = [3, 5, 7, 10, 15, 20, 25, 30, 45, 60, 90, 120];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0b0f17] to-[#1e293b] flex flex-col items-center justify-center p-8">
+    <div 
+      className="min-h-screen flex flex-col items-center justify-center p-8"
+      style={{ background: currentTheme.gradients.running }}
+    >
       <div className="w-full max-w-4xl">
         {/* Header */}
         <div className="text-center mb-10">
@@ -81,8 +87,14 @@ export default function CustomScreen({ onNavigate }) {
 
         {/* Time Display */}
         <div className="text-center mb-10">
-          <div className="bg-gray-800/50 rounded-2xl py-10 px-8 inline-block">
-            <p className="text-9xl font-mono font-bold text-primary mb-4">
+          <div 
+            className="rounded-2xl py-10 px-8 inline-block"
+            style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+          >
+            <p 
+              className="text-9xl font-mono font-bold mb-4"
+              style={{ color: currentTheme.colors.primary }}
+            >
               {Math.floor(minutes / 60) > 0 && (
                 <span>{Math.floor(minutes / 60)}:</span>
               )}
@@ -130,9 +142,12 @@ export default function CustomScreen({ onNavigate }) {
                 onClick={() => setQuickValue(val)}
                 className={`px-4 py-2 rounded-lg text-lg transition-all ${
                   minutes === val 
-                    ? 'bg-primary text-white font-bold' 
+                    ? 'text-white font-bold' 
                     : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
                 }`}
+                style={minutes === val ? { 
+                  backgroundColor: currentTheme.colors.primary 
+                } : undefined}
               >
                 {val < 60 ? `${val}m` : `${val / 60}h`}
               </button>

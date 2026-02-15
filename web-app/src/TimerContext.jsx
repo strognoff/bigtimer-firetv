@@ -1,4 +1,5 @@
 import { createContext, useContext, useReducer, useEffect, useRef, useCallback } from 'react';
+import { useSettings } from './SettingsContext';
 
 const TimerContext = createContext();
 
@@ -148,52 +149,56 @@ async function ensureAudioContextResumed() {
   return ctx;
 }
 
-// Simple beep function using Web Audio API with error handling
-function playBeep(frequency, duration) {
-  try {
-    const audioContext = getAudioContext();
-    if (!audioContext) return false;
-    
-    // Resume if suspended
-    if (audioContext.state === 'suspended') {
-      ensureAudioContextResumed().then(() => playBeep(frequency, duration));
-      return false;
-    }
-
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    oscillator.frequency.value = frequency;
-    oscillator.type = 'sine';
-
-    const now = audioContext.currentTime;
-    gainNode.gain.setValueAtTime(0.3, now);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration / 1000);
-
-    oscillator.start(now);
-    oscillator.stop(now + duration / 1000);
-    
-    return true;
-  } catch (e) {
-    console.warn('Failed to play beep:', e);
-    return false;
-  }
-}
-
 export function TimerProvider({ children }) {
   const [state, dispatch] = useReducer(timerReducer, initialState);
   const intervalRef = useRef(null);
   const halfwayPlayedRef = useRef(false);
   const lastTenPlayedRef = useRef(false);
   const lastTickTimeRef = useRef(null);
+  
+  // Get volume from settings
+  const { getAccessibilityVolume, isReducedMotion } = useSettings();
+
+  // Simple beep function using Web Audio API with volume control
+  function playBeep(frequency, duration) {
+    try {
+      const audioContext = getAudioContext();
+      if (!audioContext) return false;
+      
+      // Resume if suspended
+      if (audioContext.state === 'suspended') {
+        ensureAudioContextResumed().then(() => playBeep(frequency, duration));
+        return false;
+      }
+
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      const volume = getAccessibilityVolume();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = frequency;
+      oscillator.type = 'sine';
+
+      const now = audioContext.currentTime;
+      gainNode.gain.setValueAtTime(0.3 * volume, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration / 1000);
+
+      oscillator.start(now);
+      oscillator.stop(now + duration / 1000);
+      
+      return true;
+    } catch (e) {
+      console.warn('Failed to play beep:', e);
+      return false;
+    }
+  }
 
   // Load settings from localStorage on mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('bigtimer-settings');
+      const saved = localStorage.getItem('bigtimer-timer-settings');
       if (saved) {
         const settings = JSON.parse(saved);
         dispatch({ type: 'LOAD_SETTINGS', payload: settings });
@@ -214,7 +219,7 @@ export function TimerProvider({ children }) {
         soundHalfway: state.soundHalfway,
         soundLastTen: state.soundLastTen,
       };
-      localStorage.setItem('bigtimer-settings', JSON.stringify(settingsToSave));
+      localStorage.setItem('bigtimer-timer-settings', JSON.stringify(settingsToSave));
     } catch (e) {
       console.warn('Failed to save settings:', e);
     }
@@ -275,7 +280,7 @@ export function TimerProvider({ children }) {
       playBeep(600, 100);
     }
   }, [state.remainingSeconds, state.phase, state.soundEnabled, 
-      state.soundHalfway, state.soundLastTen, state.totalSeconds]);
+      state.soundHalfway, state.soundLastTen, state.totalSeconds, getAccessibilityVolume]);
 
   // Finished sound
   useEffect(() => {
@@ -285,7 +290,7 @@ export function TimerProvider({ children }) {
       setTimeout(() => playBeep(1200, 300), 600);
       setTimeout(() => playBeep(1500, 400), 1000);
     }
-  }, [state.phase, state.remainingSeconds, state.soundEnabled]);
+  }, [state.phase, state.remainingSeconds, state.soundEnabled, getAccessibilityVolume]);
 
   // Reset sound flags when timer starts
   useEffect(() => {
@@ -315,7 +320,7 @@ export function TimerProvider({ children }) {
     dispatch,
     TIMER_PHASES,
     TIMER_STYLES,
-    playBeep: useCallback((freq, dur) => playBeep(freq, dur), []),
+    playBeep: useCallback((freq, dur) => playBeep(freq, dur), [getAccessibilityVolume]),
   };
 
   return (
