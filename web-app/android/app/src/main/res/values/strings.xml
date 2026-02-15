@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BigTimer</string>
+    <string name="title_activity_main">BigTimer</string>
+    <string name="package_name">com.strognoff.bigtimer</string>
+    <string name="custom_url_scheme">com.strognoff.bigtimer</string>
+</resources>
