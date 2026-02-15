@@ -55,4 +55,7 @@ dependencies {
 
   // Navigation (spec: "Compose TV + nav")
   implementation("androidx.navigation:navigation-compose:2.7.7")
+
+  // Amazon IAP (will be added via AAR in app/libs when ready for production)
+  // implementation("com.amazon.android:in-app-purchasing:2.0.76I")
 }
