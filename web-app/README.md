@@ -1,16 +1,142 @@
-# React + Vite
+# BigTimer FireTV
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A kid-friendly visual timer app for Amazon Fire TV, built with React, Vite, Tailwind CSS, and Capacitor.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### MVP Features
 
-## React Compiler
+- **Quick Presets**: One-tap timers (1m, 2m, 5m, 10m, 15m, 20m, 30m, 45m, 60m, 90m, 120m)
+- **Custom Timers**: Set any duration from 1-180 minutes
+- **Visual Timer Styles**:
+  - **Numbers**: Large digital clock display
+  - **Pie Chart**: Circular progress indicator
+  - **Progress Bar**: Horizontal bar with percentage
+- **Focus Lock Mode**: Prevents accidental exits during timer
+- **Sound Effects**:
+  - Completion chime
+  - Halfway point alert (optional)
+  - Last 10 seconds countdown (optional)
+- **TV-Optimized**: Full D-pad navigation support for Fire TV remote
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Post-MVP Features
 
-## Expanding the ESLint configuration
+#### 🎨 Themes & Color Palettes
+Choose from 8 beautiful themes:
+- **Default Blue** - Classic blue tones
+- **Space** 🌌 - Purple cosmic vibes
+- **Underwater** 🐠 - Teal ocean colors
+- **Forest** 🌲 - Green nature tones
+- **Sunset** 🌅 - Warm orange/red gradients
+- **Candy** 🍬 - Pink and playful
+- **Night Mode** 🌙 - Dark indigo for low light
+- **High Contrast** 👁️ - Yellow on black for accessibility
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+#### 📋 Routine Mode
+Create sequences of timers that play automatically:
+- Build routines with multiple steps (e.g., "Bedtime": 5m tidy → 2m teeth → 10m reading)
+- Name each step with custom activity labels
+- Visual progress showing current step and overall routine progress
+- Skip steps or jump to any step during playback
+- Auto-advances between steps with completion sound
+
+#### 👤 Multiple Profiles
+Perfect for families with multiple kids:
+- Create profiles with custom names and emoji avatars
+- Each profile has its own:
+  - Theme preference
+  - Saved routines
+  - Custom timer presets
+- Quick profile switching from home screen
+
+#### ♿ Accessibility Options
+- **High Contrast Mode**: Bold yellow on black for better visibility
+- **Reduced Motion**: Disables all animations for motion sensitivity
+- **Large Text Mode**: Increases all text sizes by 20%
+- **Volume Control**: Adjustable sound effect volume (0-100%)
+
+## Tech Stack
+
+- **React 19** - UI framework
+- **Vite 7** - Build tool
+- **Tailwind CSS 4** - Styling
+- **Capacitor** - Native Android/Fire TV wrapper
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+## Building for Fire TV
+
+```bash
+# Build web app
+npm run build
+
+# Sync to Android
+npx cap sync android
+
+# Open in Android Studio
+npx cap open android
+```
+
+Then build the APK from Android Studio and deploy to Fire TV.
+
+## Project Structure
+
+```
+web-app/
+├── src/
+│   ├── App.jsx                 # Main app with routing
+│   ├── TimerContext.jsx        # Timer state management
+│   ├── SettingsContext.jsx     # Profiles, themes, accessibility
+│   ├── RoutineContext.jsx      # Routine execution state
+│   ├── themes.js               # Theme definitions
+│   ├── components/
+│   │   ├── PresetsScreen.jsx   # Home screen with presets
+│   │   ├── CustomScreen.jsx    # Custom timer setup
+│   │   ├── RunningScreen.jsx   # Timer in progress
+│   │   ├── SettingsScreen.jsx  # Theme/accessibility settings
+│   │   ├── ProfileSwitcher.jsx # Profile selection modal
+│   │   ├── RoutineBuilderScreen.jsx  # Create/edit routines
+│   │   └── RunningRoutineScreen.jsx  # Routine playback
+│   └── index.css               # Global styles + accessibility
+├── android/                    # Capacitor Android project
+└── package.json
+```
+
+## Data Persistence
+
+All user data is stored in `localStorage`:
+- `bigtimer-settings-v2` - Profiles, routines, accessibility settings
+- `bigtimer-timer-settings` - Timer preferences (style, sounds, lock)
+
+## Keyboard Controls
+
+| Key | Action |
+|-----|--------|
+| D-Pad | Navigate between buttons |
+| OK/Enter | Select / Toggle pause |
+| ← | Pause timer |
+| → | Reset/Exit (when unlocked) |
+| ↑ | Open sound settings |
+| ↓ | Cycle timer style |
+| Back/Escape | Exit / Go back |
+| S | Open Settings |
+| R | Open Routines |
+| P | Switch Profile |
+
+## License
+
+MIT
