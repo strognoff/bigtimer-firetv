@@ -32,6 +32,11 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -323,11 +328,19 @@ private fun RunningScreen(
         Text("Time: ${formatClock(ui.remainingSeconds)}", style = MaterialTheme.typography.displaySmall)
       }
       TimerStyle.Pie -> {
-        Text("(Pie style placeholder)")
+        PieTimer(
+          remainingSeconds = ui.remainingSeconds,
+          totalSeconds = ui.totalSeconds,
+          phase = ui.phase,
+        )
         Text("Time: ${formatClock(ui.remainingSeconds)}", style = MaterialTheme.typography.displaySmall)
       }
       TimerStyle.Bar -> {
-        Text("(Bar style placeholder)")
+        BarTimer(
+          remainingSeconds = ui.remainingSeconds,
+          totalSeconds = ui.totalSeconds,
+          phase = ui.phase,
+        )
         Text("Time: ${formatClock(ui.remainingSeconds)}", style = MaterialTheme.typography.displaySmall)
       }
     }
@@ -397,6 +410,104 @@ private fun PresetRow(
         }
       }
     }
+  }
+}
+
+@Composable
+private fun PieTimer(
+  remainingSeconds: Int,
+  totalSeconds: Int,
+  phase: TimerPhase,
+  modifier: Modifier = Modifier,
+) {
+  val progress = if (totalSeconds > 0) {
+    (remainingSeconds.toFloat() / totalSeconds.toFloat()).coerceIn(0f, 1f)
+  } else {
+    0f
+  }
+
+  val sweepAngle = 360f * progress
+  val color = when {
+    phase == TimerPhase.Finished -> Color(0xFF4CAF50)
+    remainingSeconds <= 10 -> Color(0xFFFF5722)
+    remainingSeconds <= totalSeconds / 2 -> Color(0xFFFFC107)
+    else -> Color(0xFF2196F3)
+  }
+
+  Canvas(
+    modifier = modifier
+      .fillMaxWidth(0.6f)
+      .padding(16.dp)
+  ) {
+    val canvasWidth = size.width
+    val canvasHeight = size.height
+    val radius = minOf(canvasWidth, canvasHeight) / 2 - 20f
+    val center = Offset(canvasWidth / 2, canvasHeight / 2)
+
+    // Background circle
+    drawCircle(
+      color = Color(0xFF333333),
+      radius = radius,
+      center = center,
+      style = Stroke(width = 30f)
+    )
+
+    // Progress arc
+    drawArc(
+      color = color,
+      startAngle = -90f,
+      sweepAngle = sweepAngle,
+      useCenter = false,
+      topLeft = Offset(center.x - radius, center.y - radius),
+      size = Size(radius * 2, radius * 2),
+      style = Stroke(width = 30f)
+    )
+  }
+}
+
+@Composable
+private fun BarTimer(
+  remainingSeconds: Int,
+  totalSeconds: Int,
+  phase: TimerPhase,
+  modifier: Modifier = Modifier,
+) {
+  val progress = if (totalSeconds > 0) {
+    (remainingSeconds.toFloat() / totalSeconds.toFloat()).coerceIn(0f, 1f)
+  } else {
+    0f
+  }
+
+  val color = when {
+    phase == TimerPhase.Finished -> Color(0xFF4CAF50)
+    remainingSeconds <= 10 -> Color(0xFFFF5722)
+    remainingSeconds <= totalSeconds / 2 -> Color(0xFFFFC107)
+    else -> Color(0xFF2196F3)
+  }
+
+  Canvas(
+    modifier = modifier
+      .fillMaxWidth(0.9f)
+      .padding(vertical = 16.dp)
+  ) {
+    val canvasWidth = size.width
+    val canvasHeight = size.height
+    val barHeight = 80f
+    val barTop = (canvasHeight - barHeight) / 2
+
+    // Background bar
+    drawRect(
+      color = Color(0xFF333333),
+      topLeft = Offset(0f, barTop),
+      size = Size(canvasWidth, barHeight)
+    )
+
+    // Progress bar
+    drawRect(
+      color = color,
+      topLeft = Offset(0f, barTop),
+      size = Size(canvasWidth * progress, barHeight)
+    )
   }
 }
 
