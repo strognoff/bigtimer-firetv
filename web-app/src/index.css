@@ -1,0 +1,182 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #7AA2FF;
+  --color-secondary: #2A3D75;
+  --color-accent: #4CAF50;
+  --color-dark: #0b0f17;
+  --color-darker: #1e293b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--color-darker);
+  color: white;
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+/* TV Focus Styles */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.btn-preset {
+  background-color: var(--color-secondary);
+  color: white;
+  font-weight: bold;
+  padding: 1.5rem 2rem;
+  font-size: 1.5rem;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.btn-preset:hover {
+  background-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.btn-preset:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--color-primary), 0 6px 12px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-preset:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.btn-preset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Timer Display */
+.timer-display {
+  color: white;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Courier New', monospace;
+  font-size: 10rem;
+  font-weight: bold;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 40px rgba(122, 162, 255, 0.3);
+}
+
+@media (min-width: 768px) {
+  .timer-display {
+    font-size: 14rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .timer-display {
+    font-size: 18rem;
+  }
+}
+
+/* Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(122, 162, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(122, 162, 255, 0.5);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* Gradient backgrounds for different timer states */
+.bg-timer-running {
+  background: linear-gradient(135deg, #1e293b 0%, #0b0f17 50%, #1a1f2e 100%);
+}
+
+.bg-timer-paused {
+  background: linear-gradient(135deg, #2d2a1f 0%, #1a1a17 50%, #2a251a 100%);
+}
+
+.bg-timer-finished {
+  background: linear-gradient(135deg, #1f3d1f 0%, #0f1f0f 50%, #1a2f1a 100%);
+}
+
+/* Progress bar styling */
+.progress-bar {
+  transition: width 1s linear;
+}
+
+/* TV-safe margins */
+@media (min-width: 1920px) {
+  .tv-container {
+    padding: 4rem;
+  }
+}
+
+/* Prevent text selection on buttons */
+button {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Ensure good contrast for TV screens */
+@media tv {
+  body {
+    font-size: 120%;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

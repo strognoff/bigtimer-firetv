@@ -65,6 +65,11 @@ fun BigTimerApp() {
   val settingsStore = remember { TimerSettingsStore(context) }
   val persisted by settingsStore.settingsFlow.collectAsState(initial = TimerPersistedSettings())
 
+  // IAP Manager for Pro unlock
+  val iapManager = remember { IapManager(context) }
+  val isPro by iapManager.isProUnlocked.collectAsState()
+  val purchaseState by iapManager.purchaseState.collectAsState()
+
   // Keep VM stable across recompositions (TV focus changes can recompose often).
   val vm = remember { TimerViewModel() }
   val ui = vm.state
@@ -137,11 +142,14 @@ fun BigTimerApp() {
     composable("presets") {
       PresetsScreen(
         ui = ui,
+        isPro = isPro,
+        purchaseState = purchaseState,
         onStartPreset = {
           vm.startPreset(it)
           nav.navigate("running")
         },
         onOpenCustom = { nav.navigate("custom") },
+        onPurchasePro = { iapManager.purchaseProUnlock() },
       )
     }
 
@@ -179,8 +187,11 @@ fun BigTimerApp() {
 @Composable
 private fun PresetsScreen(
   ui: TimerUiState,
+  isPro: Boolean,
+  purchaseState: IapManager.PurchaseState,
   onStartPreset: (Int) -> Unit,
   onOpenCustom: () -> Unit,
+  onPurchasePro: () -> Unit,
 ) {
   val firstPresetFocus = remember { FocusRequester() }
 
@@ -195,7 +206,29 @@ private fun PresetsScreen(
       .padding(24.dp),
     verticalArrangement = Arrangement.spacedBy(20.dp),
   ) {
-    Text("BigTimer", style = MaterialTheme.typography.headlineLarge)
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Text("BigTimer", style = MaterialTheme.typography.headlineLarge)
+      if (isPro) {
+        Text("PRO ✓", style = MaterialTheme.typography.titleMedium, color = Color(0xFF4CAF50))
+      } else {
+        FocusRingButton(onClick = onPurchasePro) {
+          when (purchaseState) {
+            is IapManager.PurchaseState.Loading -> Text("Loading...")
+            is IapManager.PurchaseState.Purchasing -> Text("Processing...")
+            else -> Text("Upgrade to Pro")
+          }
+        }
+      }
+    }
+
+    if (purchaseState is IapManager.PurchaseState.Error) {
+      Text("Purchase error: ${purchaseState.message}", color = Color(0xFFFF5722))
+    }
+
     Text("Pick a preset", style = MaterialTheme.typography.titleLarge)
 
     PresetRow(listOf(1, 2, 5, 10), onSelect = onStartPreset, firstButtonFocus = firstPresetFocus)
